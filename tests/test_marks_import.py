@@ -6,10 +6,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
 
-# Redirect database path to isolated test database
 import backend.database.database as db_module
-TEST_DB_PATH = os.path.join(BASE_DIR, "data", "test_studentinsight.db")
-db_module.DB_PATH = TEST_DB_PATH
+ORIGINAL_DB_PATH = db_module.DB_PATH
+TEST_DB_PATH = os.path.join(BASE_DIR, "data", "test_marks_import.db")
 
 from backend.database.database import create_tables, get_connection
 from backend.services.student_service import add_student
@@ -23,7 +22,8 @@ class TestMarksImportService(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        """Sets up an isolated test database with prerequisite department, class, student, subject, and exam."""
+        """Redirect DB_PATH to isolated test database and create tables."""
+        db_module.DB_PATH = TEST_DB_PATH
         if os.path.exists(TEST_DB_PATH):
             try:
                 os.remove(TEST_DB_PATH)
@@ -46,12 +46,8 @@ class TestMarksImportService(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        """Cleans up the test database file."""
-        if os.path.exists(TEST_DB_PATH):
-            try:
-                os.remove(TEST_DB_PATH)
-            except PermissionError:
-                pass
+        """Restore original DB_PATH."""
+        db_module.DB_PATH = ORIGINAL_DB_PATH
 
     def test_import_valid_record(self):
         """1. Test importing a perfectly valid extracted mark record."""

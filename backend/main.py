@@ -12,6 +12,7 @@ from backend.api.teachers import router as teachers_router
 from backend.api.subjects import router as subjects_router
 from backend.api.exams import router as exams_router
 from backend.api.marks import router as marks_router
+from backend.api.analytics import router as analytics_router
 
 app = FastAPI(
     title="StudentInsight API",
@@ -25,6 +26,7 @@ app.include_router(teachers_router)
 app.include_router(subjects_router)
 app.include_router(exams_router)
 app.include_router(marks_router)
+app.include_router(analytics_router)
 
 
 @app.get("/", tags=["Root"])

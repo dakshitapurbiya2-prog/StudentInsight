@@ -2,15 +2,13 @@ import sys
 import os
 import unittest
 
-# Ensure project root is in sys.path
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
 
-# Redirect database path to a separate test database file
 import backend.database.database as db_module
-TEST_DB_PATH = os.path.join(BASE_DIR, "data", "test_studentinsight.db")
-db_module.DB_PATH = TEST_DB_PATH
+ORIGINAL_DB_PATH = db_module.DB_PATH
+TEST_DB_PATH = os.path.join(BASE_DIR, "data", "test_marks_service.db")
 
 from backend.database.database import create_tables, get_connection
 from backend.services.student_service import add_student
@@ -31,18 +29,16 @@ class TestMarksService(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        """Runs once before all tests in this class to set up a clean test database and prerequisite records."""
-        # Remove old test database if it exists
+        """Redirect DB_PATH to isolated test database and create tables."""
+        db_module.DB_PATH = TEST_DB_PATH
         if os.path.exists(TEST_DB_PATH):
             try:
                 os.remove(TEST_DB_PATH)
             except PermissionError:
                 pass
 
-        # Create all tables in the test database
         create_tables()
 
-        # Seed prerequisite foreign keys (department, class, student, teacher, subject, exam)
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("INSERT INTO departments (name) VALUES ('Marks Test Dept');")
@@ -57,12 +53,8 @@ class TestMarksService(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        """Runs once after all tests complete to clean up the test database file."""
-        if os.path.exists(TEST_DB_PATH):
-            try:
-                os.remove(TEST_DB_PATH)
-            except PermissionError:
-                pass
+        """Restore original DB_PATH."""
+        db_module.DB_PATH = ORIGINAL_DB_PATH
 
     def test_6_add_marks(self):
         """Test adding marks evaluation record."""
@@ -75,11 +67,9 @@ class TestMarksService(unittest.TestCase):
         )
         self.assertIsNotNone(mark_id, "Failed to add marks.")
         self.assertGreater(mark_id, 0)
-        self.test_mark_id = mark_id
 
     def test_7_read_marks(self):
         """Test reading marks by student, by exam, and by subject."""
-        # Add a mark record first
         mark_id = add_marks(
             student_id=self.student_id,
             subject_id=self.subject_id,
@@ -88,17 +78,14 @@ class TestMarksService(unittest.TestCase):
             max_marks=100.0
         )
 
-        # Read by student
         by_student = get_marks_by_student(self.student_id)
         self.assertIsInstance(by_student, list)
         self.assertGreater(len(by_student), 0)
 
-        # Read by exam
         by_exam = get_marks_by_exam(self.exam_id)
         self.assertIsInstance(by_exam, list)
         self.assertGreater(len(by_exam), 0)
 
-        # Read by subject
         by_subject = get_marks_by_subject(self.subject_id)
         self.assertIsInstance(by_subject, list)
         self.assertGreater(len(by_subject), 0)
@@ -113,11 +100,9 @@ class TestMarksService(unittest.TestCase):
             max_marks=100.0
         )
 
-        # Update marks to 95.0
         success = update_marks(mark_id=mark_id, marks_obtained=95.0, max_marks=100.0)
         self.assertTrue(success, "Failed to update marks.")
 
-        # Verify update
         student_marks = get_marks_by_student(self.student_id)
         updated_entry = next((m for m in student_marks if m["mark_id"] == mark_id), None)
         self.assertIsNotNone(updated_entry)
@@ -133,11 +118,9 @@ class TestMarksService(unittest.TestCase):
             max_marks=100.0
         )
 
-        # Delete marks record
         success = delete_marks(mark_id=mark_id)
         self.assertTrue(success, "Failed to delete marks.")
 
-        # Verify deletion
         student_marks = get_marks_by_student(self.student_id)
         deleted_entry = next((m for m in student_marks if m["mark_id"] == mark_id), None)
         self.assertIsNone(deleted_entry, "Marks record still exists after deletion.")
