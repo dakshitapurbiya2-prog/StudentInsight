@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
-from typing import List
+from typing import List, Any, Dict, Optional
 
 from backend.services import marks_service
+from backend.services import marks_import_service
 
 router = APIRouter(prefix="/marks", tags=["Marks"])
 
@@ -28,6 +29,19 @@ class MarksResponse(BaseModel):
     exam_id: int
     marks_obtained: float
     max_marks: float
+
+
+# Schemas for Structured Marks Import (PDF Pipeline Integration)
+class ExtractedMarkItem(BaseModel):
+    roll_number: str
+    subject: str
+    marks: float
+
+
+class MarksImportRequest(BaseModel):
+    exam_id: int
+    max_marks: float = 100.0
+    records: List[ExtractedMarkItem]
 
 
 @router.get("/student/{student_id}", response_model=List[MarksResponse], status_code=status.HTTP_200_OK)
@@ -81,6 +95,21 @@ def create_marks_endpoint(marks_data: MarksCreate):
             detail="Marks record created but could not be fetched."
         )
     return recorded_mark
+
+
+@router.post("/import", status_code=status.HTTP_200_OK)
+def import_structured_marks_endpoint(import_payload: MarksImportRequest):
+    """
+    Accepts structured extracted marks data (e.g. from PDF processing pipeline),
+    validates records against database rules, and saves valid entries.
+    """
+    raw_records = [item.model_dump() for item in import_payload.records]
+    result_summary = marks_import_service.process_marks_import(
+        imported_records=raw_records,
+        exam_id=import_payload.exam_id,
+        max_marks=import_payload.max_marks
+    )
+    return result_summary
 
 
 @router.put("/{mark_id}", status_code=status.HTTP_200_OK)
