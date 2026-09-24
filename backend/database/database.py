@@ -68,6 +68,7 @@ def create_tables():
     CREATE TABLE IF NOT EXISTS subjects (
         subject_id INTEGER PRIMARY KEY AUTOINCREMENT,
         subject_name TEXT NOT NULL,
+        subject_code TEXT,
         class_id INTEGER NOT NULL,
         teacher_id INTEGER,
         FOREIGN KEY (class_id) REFERENCES classes (class_id),

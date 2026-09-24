@@ -10,7 +10,7 @@ if BASE_DIR not in sys.path:
 from backend.database.database import get_connection
 
 
-def add_subject(subject_name, class_id, teacher_id=None):
+def add_subject(subject_name, class_id, teacher_id=None, subject_code=None):
     """
     Creates a new subject record in the database.
     Returns the new subject_id on success, or None on failure.
@@ -19,8 +19,8 @@ def add_subject(subject_name, class_id, teacher_id=None):
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "INSERT INTO subjects (subject_name, class_id, teacher_id) VALUES (?, ?, ?);",
-            (subject_name, class_id, teacher_id)
+            "INSERT INTO subjects (subject_name, subject_code, class_id, teacher_id) VALUES (?, ?, ?, ?);",
+            (subject_name, subject_code, class_id, teacher_id)
         )
         conn.commit()
         subject_id = cursor.lastrowid
@@ -41,7 +41,7 @@ def get_subject_by_id(subject_id):
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "SELECT subject_id, subject_name, class_id, teacher_id FROM subjects WHERE subject_id = ?;",
+            "SELECT subject_id, subject_name, subject_code, class_id, teacher_id FROM subjects WHERE subject_id = ?;",
             (subject_id,)
         )
         row = cursor.fetchone()
@@ -49,8 +49,9 @@ def get_subject_by_id(subject_id):
             return {
                 "subject_id": row[0],
                 "subject_name": row[1],
-                "class_id": row[2],
-                "teacher_id": row[3]
+                "subject_code": row[2],
+                "class_id": row[3],
+                "teacher_id": row[4]
             }
         return None
     except sqlite3.Error as e:
@@ -68,15 +69,16 @@ def get_all_subjects():
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT subject_id, subject_name, class_id, teacher_id FROM subjects ORDER BY subject_id;")
+        cursor.execute("SELECT subject_id, subject_name, subject_code, class_id, teacher_id FROM subjects ORDER BY subject_id;")
         rows = cursor.fetchall()
         subjects = []
         for row in rows:
             subjects.append({
                 "subject_id": row[0],
                 "subject_name": row[1],
-                "class_id": row[2],
-                "teacher_id": row[3]
+                "subject_code": row[2],
+                "class_id": row[3],
+                "teacher_id": row[4]
             })
         return subjects
     except sqlite3.Error as e:

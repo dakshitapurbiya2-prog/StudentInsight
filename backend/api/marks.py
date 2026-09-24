@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
-from typing import List, Any, Dict, Optional
+from typing import List, Any, Dict, Optional, Union
 
 from backend.services import marks_service
 from backend.services import marks_import_service
@@ -34,8 +34,9 @@ class MarksResponse(BaseModel):
 # Schemas for Structured Marks Import (PDF Pipeline Integration)
 class ExtractedMarkItem(BaseModel):
     roll_number: str
-    subject: str
-    marks: float
+    subject: Optional[str] = None          # Subject full name e.g. "Mathematics"
+    subject_code: Optional[str] = None     # Subject code e.g. "BT-101" (alternative to subject)
+    marks: Union[float, str]               # Float value OR "ABS" for absent students
 
 
 class MarksImportRequest(BaseModel):

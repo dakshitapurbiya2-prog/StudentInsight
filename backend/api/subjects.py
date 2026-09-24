@@ -10,6 +10,7 @@ router = APIRouter(prefix="/subjects", tags=["Subjects"])
 # Pydantic Schemas for Request & Response Validation
 class SubjectCreate(BaseModel):
     subject_name: str
+    subject_code: Optional[str] = None    # e.g. "BT-101"
     class_id: int
     teacher_id: Optional[int] = None
 
@@ -17,6 +18,7 @@ class SubjectCreate(BaseModel):
 class SubjectResponse(BaseModel):
     subject_id: int
     subject_name: str
+    subject_code: Optional[str] = None
     class_id: int
     teacher_id: Optional[int] = None
 
@@ -50,6 +52,7 @@ def create_subject_endpoint(subject_data: SubjectCreate):
     """
     subject_id = subject_service.add_subject(
         subject_name=subject_data.subject_name,
+        subject_code=subject_data.subject_code,
         class_id=subject_data.class_id,
         teacher_id=subject_data.teacher_id
     )
