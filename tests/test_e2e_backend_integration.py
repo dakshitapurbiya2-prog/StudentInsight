@@ -113,7 +113,7 @@ def _make_backend_http_dispatcher():
 
 # ── Database Setup & Teardown Fixture ─────────────────────────────────────────
 
-class TestDatabaseEnvironment:
+class E2EDatabaseEnvironment:
     """Manages an isolated SQLite test database seeded for sample_marks.pdf."""
 
     def __init__(self):
@@ -212,7 +212,7 @@ class TestDatabaseEnvironment:
 # 1. Extraction and Mapping Verification
 # ═════════════════════════════════════════════════════════════════════════════
 
-def test_1_extraction_and_mapping(env: TestDatabaseEnvironment):
+def step_1_extraction_and_mapping(env: E2EDatabaseEnvironment):
     """
     Verify:
     - 52 students are extracted.
@@ -276,7 +276,7 @@ def test_1_extraction_and_mapping(env: TestDatabaseEnvironment):
 # 2. Dry-Run Validation Verification
 # ═════════════════════════════════════════════════════════════════════════════
 
-def test_2_dry_run_validation(session: create_review_session, env: TestDatabaseEnvironment):
+def step_2_dry_run_validation(session: create_review_session, env: E2EDatabaseEnvironment):
     """
     Verify:
     - Confirm the backend validates the request.
@@ -329,7 +329,7 @@ def test_2_dry_run_validation(session: create_review_session, env: TestDatabaseE
 # 3. Actual Import Execution
 # ═════════════════════════════════════════════════════════════════════════════
 
-def test_3_actual_import(workflow: TeacherImportWorkflow, env: TestDatabaseEnvironment):
+def step_3_actual_import(workflow: TeacherImportWorkflow, env: E2EDatabaseEnvironment):
     """
     Verify:
     - Use a designated test exam.
@@ -374,7 +374,7 @@ def test_3_actual_import(workflow: TeacherImportWorkflow, env: TestDatabaseEnvir
 # 4. Database Verification
 # ═════════════════════════════════════════════════════════════════════════════
 
-def test_4_database_verification(session: create_review_session, env: TestDatabaseEnvironment):
+def step_4_database_verification(session: create_review_session, env: E2EDatabaseEnvironment):
     """
     Use the existing backend's supported read mechanism (get_marks_by_exam)
     and SQL queries to confirm:
@@ -462,7 +462,7 @@ def test_4_database_verification(session: create_review_session, env: TestDataba
 # 5. Error Cases Verification
 # ═════════════════════════════════════════════════════════════════════════════
 
-def test_5_error_cases(env: TestDatabaseEnvironment):
+def step_5_error_cases(env: E2EDatabaseEnvironment):
     """
     Test failure scenarios and edge cases:
     - Invalid exam ID
@@ -597,29 +597,34 @@ def test_5_error_cases(env: TestDatabaseEnvironment):
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# Main Test Orchestrator
+# Main Test Orchestrator & Pytest Entrypoint
 # ═════════════════════════════════════════════════════════════════════════════
+
+def test_e2e_full_workflow():
+    """Pytest entrypoint for running the end-to-end integration workflow."""
+    run_all_e2e_integration_tests()
+
 
 def run_all_e2e_integration_tests():
     print("=" * 70)
     print("STAGE 3, STEP 6: END-TO-END BACKEND INTEGRATION TESTS")
     print("=" * 70)
 
-    with TestDatabaseEnvironment() as env:
+    with E2EDatabaseEnvironment() as env:
         # Step 1: Extraction & Mapping
-        pipeline_res, session = test_1_extraction_and_mapping(env)
+        pipeline_res, session = step_1_extraction_and_mapping(env)
 
         # Step 2: Dry-run Validation
-        workflow = test_2_dry_run_validation(session, env)
+        workflow = step_2_dry_run_validation(session, env)
 
         # Step 3: Actual Import
-        test_3_actual_import(workflow, env)
+        step_3_actual_import(workflow, env)
 
         # Step 4: Database Verification
-        test_4_database_verification(session, env)
+        step_4_database_verification(session, env)
 
         # Step 5: Error Cases
-        test_5_error_cases(env)
+        step_5_error_cases(env)
 
     print("=" * 70)
     print("ALL STAGE 3, STEP 6 END-TO-END INTEGRATION TESTS PASSED!")
@@ -628,3 +633,4 @@ def run_all_e2e_integration_tests():
 
 if __name__ == "__main__":
     run_all_e2e_integration_tests()
+
