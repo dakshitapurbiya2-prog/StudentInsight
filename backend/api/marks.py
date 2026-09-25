@@ -99,17 +99,29 @@ def create_marks_endpoint(marks_data: MarksCreate):
 
 
 @router.post("/import", status_code=status.HTTP_200_OK)
-def import_structured_marks_endpoint(import_payload: MarksImportRequest):
+def import_structured_marks_endpoint(
+    import_payload: MarksImportRequest,
+    dry_run: bool = False
+):
     """
     Accepts structured extracted marks data (e.g. from PDF processing pipeline),
     validates records against database rules, and saves valid entries.
+
+    Query param:
+    - dry_run=true  → Validates all records and returns what WOULD be saved/failed,
+                       but does NOT write anything to the database. Safe for testing.
+    - dry_run=false → (default) Validates and saves to database.
     """
     raw_records = [item.model_dump() for item in import_payload.records]
     result_summary = marks_import_service.process_marks_import(
         imported_records=raw_records,
         exam_id=import_payload.exam_id,
-        max_marks=import_payload.max_marks
+        max_marks=import_payload.max_marks,
+        dry_run=dry_run
     )
+    if dry_run:
+        result_summary["dry_run"] = True
+        result_summary["message"] = "Dry run complete. No data was saved to the database."
     return result_summary
 
 

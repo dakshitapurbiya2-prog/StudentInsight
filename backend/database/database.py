@@ -118,6 +118,13 @@ def create_tables():
     );
     """)
 
+    # Check and perform migration for existing databases missing subject_code
+    cursor.execute("PRAGMA table_info(subjects);")
+    columns = [col[1] for col in cursor.fetchall()]
+    if "subject_code" not in columns:
+        cursor.execute("ALTER TABLE subjects ADD COLUMN subject_code TEXT;")
+        print("[+] Migrated database: Added subject_code column to subjects table.")
+
     conn.commit()
     conn.close()
     print("Database and all 8 tables created successfully!")

@@ -130,6 +130,36 @@ class TestMarksImportService(unittest.TestCase):
         self.assertEqual(result["saved_records"], 1)
         self.assertEqual(result["failed_records"], 2)
 
+    def test_import_subject_code_lookup(self):
+        """9. Test looking up subject by subject_code (e.g. BT-101)."""
+        # Register a subject with subject_code
+        add_subject(subject_name="Data Structures", class_id=1, teacher_id=self.teacher_id, subject_code="BT-101")
+        payload = [
+            {"roll_number": "IMP101", "subject_code": "BT-101", "marks": 85.0}
+        ]
+        result = process_marks_import(imported_records=payload, exam_id=self.exam_id, max_marks=100.0)
+        self.assertEqual(result["saved_records"], 1)
+        self.assertEqual(result["saved"][0]["subject_code"], "BT-101")
+
+    def test_import_absent_student(self):
+        """10. Test that 'ABS' marks are skipped and logged in absent list."""
+        payload = [
+            {"roll_number": "IMP101", "subject": "Python", "marks": "ABS"}
+        ]
+        result = process_marks_import(imported_records=payload, exam_id=self.exam_id, max_marks=100.0)
+        self.assertEqual(result["saved_records"], 0)
+        self.assertEqual(result["skipped_absent"], 1)
+        self.assertEqual(len(result["absent"]), 1)
+
+    def test_import_dry_run_mode(self):
+        """11. Test that dry_run=True validates records without saving to database."""
+        payload = [
+            {"roll_number": "IMP101", "subject": "Python", "marks": 95.0}
+        ]
+        result = process_marks_import(imported_records=payload, exam_id=self.exam_id, max_marks=100.0, dry_run=True)
+        self.assertEqual(result["saved_records"], 1)
+        self.assertEqual(result["saved"][0]["marks_obtained"], 95.0)
+
 
 if __name__ == "__main__":
     unittest.main()

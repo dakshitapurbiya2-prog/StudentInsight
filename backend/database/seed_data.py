@@ -101,17 +101,17 @@ def seed_database():
     # 5. Insert Subjects (for both AIML-A and AIML-B)
     # -------------------------------------------------------------
     subjects_list = [
-        ("Python", "Mr. Sharma"),
-        ("Mathematics", "Ms. Patil"),
-        ("DBMS", "Mr. Verma"),
-        ("Machine Learning", "Mr. Sharma")
+        ("Python", "BT-101", "Mr. Sharma"),
+        ("Mathematics", "BT-102", "Ms. Patil"),
+        ("DBMS", "BT-103", "Mr. Verma"),
+        ("Machine Learning", "BT-104", "Mr. Sharma")
     ]
     
     # Store subject IDs as mapping: (class_id, subject_name) -> subject_id
     subject_ids = {}
 
     for cname, cid in class_ids.items():
-        for sub_name, teacher_name in subjects_list:
+        for sub_name, sub_code, teacher_name in subjects_list:
             tid = teacher_ids[teacher_name]
             cursor.execute(
                 "SELECT subject_id FROM subjects WHERE subject_name = ? AND class_id = ?;",
@@ -120,15 +120,19 @@ def seed_database():
             row = cursor.fetchone()
             if not row:
                 cursor.execute(
-                    "INSERT INTO subjects (subject_name, class_id, teacher_id) VALUES (?, ?, ?);",
-                    (sub_name, cid, tid)
+                    "INSERT INTO subjects (subject_name, subject_code, class_id, teacher_id) VALUES (?, ?, ?, ?);",
+                    (sub_name, sub_code, cid, tid)
                 )
                 sub_id = cursor.lastrowid
             else:
                 sub_id = row[0]
+                cursor.execute(
+                    "UPDATE subjects SET subject_code = ? WHERE subject_id = ?;",
+                    (sub_code, sub_id)
+                )
             subject_ids[(cid, sub_name)] = sub_id
 
-    print(f"[+] Subjects verified across all classes.")
+    print(f"[+] Subjects verified with subject_codes across all classes.")
 
     # -------------------------------------------------------------
     # 6. Insert Exams
@@ -170,7 +174,7 @@ def seed_database():
     marks_inserted_count = 0
 
     for roll, (sid, sname, cid) in student_ids.items():
-        for sub_name, _ in subjects_list:
+        for sub_name, _, _ in subjects_list:
             sub_id = subject_ids[(cid, sub_name)]
             for ename, _ in exams_list:
                 eid = exam_ids[(cid, ename)]

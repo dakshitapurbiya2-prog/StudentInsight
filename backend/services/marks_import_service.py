@@ -10,7 +10,7 @@ if BASE_DIR not in sys.path:
 from backend.database.database import get_connection
 
 
-def process_marks_import(imported_records, exam_id, max_marks=100.0):
+def process_marks_import(imported_records, exam_id, max_marks=100.0, dry_run=False):
     """
     Processes structured marks data (e.g. parsed from PDF/CSV), performs multi-step
     validation, and saves valid records to the database.
@@ -185,27 +185,30 @@ def process_marks_import(imported_records, exam_id, max_marks=100.0):
             )
             existing_mark = cursor.fetchone()
 
-            if existing_mark:
-                mark_id = existing_mark[0]
-                cursor.execute(
-                    """
-                    UPDATE marks
-                    SET marks_obtained = ?, max_marks = ?
-                    WHERE mark_id = ?;
-                    """,
-                    (marks, max_marks, mark_id)
-                )
-            else:
-                cursor.execute(
-                    """
-                    INSERT INTO marks (student_id, subject_id, exam_id, marks_obtained, max_marks)
-                    VALUES (?, ?, ?, ?, ?);
-                    """,
-                    (student_id, subject_id, exam_id, marks, max_marks)
-                )
-                mark_id = cursor.lastrowid
+            if not dry_run:
+                if existing_mark:
+                    mark_id = existing_mark[0]
+                    cursor.execute(
+                        """
+                        UPDATE marks
+                        SET marks_obtained = ?, max_marks = ?
+                        WHERE mark_id = ?;
+                        """,
+                        (marks, max_marks, mark_id)
+                    )
+                else:
+                    cursor.execute(
+                        """
+                        INSERT INTO marks (student_id, subject_id, exam_id, marks_obtained, max_marks)
+                        VALUES (?, ?, ?, ?, ?);
+                        """,
+                        (student_id, subject_id, exam_id, marks, max_marks)
+                    )
+                    mark_id = cursor.lastrowid
 
-            conn.commit()
+                conn.commit()
+            else:
+                mark_id = existing_mark[0] if existing_mark else -1
 
             result_summary["saved_records"] += 1
             result_summary["saved"].append({
