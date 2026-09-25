@@ -3,14 +3,14 @@ def validate_student_records(students, subjects, max_marks):
     Validate a list of cleaned student records.
 
     Checks performed for every student:
-        - enrollment_no is present (not empty).
+        - roll_number is present (not empty).
         - name is present (not empty).
         - All expected subjects exist in the marks dict.
         - Each mark is either an integer or the string "ABS".
         - Numeric marks are between 0 and the subject's maximum marks.
 
     Also checks across all students:
-        - No two students share the same enrollment number (duplicate detection).
+        - No two students share the same roll number (duplicate detection).
 
     Does NOT modify student data in any way.
 
@@ -23,34 +23,34 @@ def validate_student_records(students, subjects, max_marks):
     """
 
     results = []               # one result dict per student
-    seen_enrollments = {}      # used to detect duplicate enrollment numbers
+    seen_roll_numbers = {}     # used to detect duplicate roll numbers
 
     for index, student in enumerate(students):
 
         errors = []            # list of error messages for this student
 
-        # ── 1. Check enrollment number ──────────────────────────────────────
-        enrollment_no = student.get("enrollment_no", "").strip()
-        if not enrollment_no:
-            errors.append("Missing enrollment number.")
+        # ── 1. Check roll number ─────────────────────────────────────────────
+        roll_number = student.get("roll_number", "").strip()
+        if not roll_number:
+            errors.append("Missing roll number.")
 
         # ── 2. Check student name ────────────────────────────────────────────
-        name = student.get("name", "").strip()
+        name = (student.get("student_name") or student.get("name") or "").strip()
         if not name:
             errors.append("Missing student name.")
 
-        # ── 3. Duplicate enrollment number detection ─────────────────────────
-        if enrollment_no:
-            if enrollment_no in seen_enrollments:
+        # ── 3. Duplicate roll number detection ───────────────────────────────
+        if roll_number:
+            if roll_number in seen_roll_numbers:
                 # Record which earlier row also has this number
-                earlier_index = seen_enrollments[enrollment_no]
+                earlier_index = seen_roll_numbers[roll_number]
                 errors.append(
-                    f"Duplicate enrollment number. "
+                    f"Duplicate roll number. "
                     f"Already seen at row index {earlier_index}."
                 )
             else:
-                # First time we see this enrollment number — remember its position
-                seen_enrollments[enrollment_no] = index
+                # First time we see this roll number — remember its position
+                seen_roll_numbers[roll_number] = index
 
         # ── 4. Check marks ───────────────────────────────────────────────────
         marks = student.get("marks", {})
@@ -89,7 +89,9 @@ def validate_student_records(students, subjects, max_marks):
 
         results.append({
             "index":         index,
-            "enrollment_no": enrollment_no or "(missing)",
+            "serial_number": student.get("serial_number"),
+            "roll_number":   roll_number or "(missing)",
+            "student_name":  name or "(missing)",
             "name":          name or "(missing)",
             "is_valid":      is_valid,
             "errors":        errors
