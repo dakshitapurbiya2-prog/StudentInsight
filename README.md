@@ -2,9 +2,9 @@
 
 > **Student Performance Analytics & Automated Marksheet Processing Platform**
 
-StudentInsight is an institutional academic performance analytics system that automates the ingestion, validation, and analytics of student examination records. 
+StudentInsight is an institutional academic performance analytics system designed to track, analyze, and visualize student performance and academic trends, featuring automated marksheets processing, REST APIs, and analytics dashboards.
 
-This repository houses the core platform components, featuring the **PDF Processing & Data Validation Module (Member 2)**, which provides an audited, safe ingestion gateway converting raw institutional marksheets into normalized database records.
+This repository houses the core platform components, featuring the **PDF Processing & Data Validation Module**, which provides an audited, safe ingestion gateway converting raw institutional marksheets into normalized database records.
 
 ---
 
@@ -62,7 +62,7 @@ This repository houses the core platform components, featuring the **PDF Process
 
 ---
 
-## PDF Processing Module (Member 2)
+## PDF Processing Module
 
 The `pdf_processing` module is responsible for parsing institutional examination marksheets (e.g., college semester exams, midterms, unit tests), validating scores, and enabling safe teacher verification before persisting records to the database.
 
@@ -86,8 +86,13 @@ The `pdf_processing` module is responsible for parsing institutional examination
 
 ```
 StudentInsight/
-├── pdf_processing/                   # Member 2: PDF Processing & Validation
-│   ├── __init__.py                   # Package exports
+├── backend/                          # REST API Endpoints, Services & Database
+│   ├── api/                          # FastAPI route handlers (marks, analytics, auth)
+│   ├── database/                     # SQLite connection, schema & migration scripts
+│   └── services/                     # Business logic and database operations
+├── frontend/                         # User interface for analytics & dashboards
+├── ml/                               # Machine learning performance models
+├── pdf_processing/                   # PDF Processing & Validation Module
 │   ├── extractor.py                  # Low-level PDF text stream extraction
 │   ├── parser.py                     # Header, metadata, and student row parsing
 │   ├── cleaner.py                    # Whitespace cleaning and uppercase normalization
@@ -99,16 +104,11 @@ StudentInsight/
 │   ├── backend_client.py             # HTTP client for POST /marks/import API
 │   ├── import_workflow.py            # Two-stage gated import orchestrator
 │   ├── workflow_adapter.py           # Stateless adapter for Streamlit UI
-│   ├── PDF_INPUT_SPECIFICATION.md    # 500+ line detailed data specification
+│   ├── PDF_INPUT_SPECIFICATION.md    # Detailed data specification
 │   ├── BACKEND_CHANGES_REQUIRED.md   # Backend transaction & constraint recommendations
 │   └── samples/
 │       └── sample_marks.pdf          # 2-page sample marksheet (52 students, 5 subjects)
-├── app/
-│   └── frontend/
-│       └── dashboards/
-│           ├── pdf_upload_tab.py     # Streamlit Tab 3 UI component for PDF import
-│           └── teacher_dashboard.py  # Teacher dashboard incorporating PDF import tab
-├── tests/                            # Comprehensive Test Suites (10 test modules)
+├── tests/                            # Automated Test Suites
 │   ├── test_extractor.py             # PDF text extraction tests
 │   ├── test_parser.py                # Regex and student row parsing tests
 │   ├── test_normalizer.py            # Structure A normalization rules tests
@@ -119,9 +119,8 @@ StudentInsight/
 │   ├── test_workflow_adapter.py      # Streamlit workflow adapter tests
 │   ├── test_pdf_upload_tab.py        # Streamlit UI tab lifecycle tests
 │   └── test_e2e_backend_integration.py # Full PDF-to-SQLite database verification tests
-├── sample_data/
-│   └── college_marks.pdf             # Reference marksheet PDF
-├── README.md                         # Project documentation
+├── data/                             # SQLite database and data storage
+├── README.md                         # Project overview and documentation
 └── .gitignore                        # Git ignore rules
 ```
 
@@ -130,7 +129,7 @@ StudentInsight/
 ## Setup and Installation
 
 ### 1. Prerequisites
-- Python 3.10+ (tested on Python 3.11, 3.12, 3.14)
+- Python 3.10+
 - Git
 
 ### 2. Environment Setup
@@ -138,9 +137,6 @@ StudentInsight/
 # Clone the repository
 git clone https://github.com/BobtheBuilder-193/student-insight.ai.git
 cd student-insight.ai
-
-# Switch to the PDF processing feature branch
-git checkout feature/pdf-processing
 
 # Create and activate virtual environment
 python -m venv .venv
@@ -151,8 +147,8 @@ python -m venv .venv
 # Linux / macOS
 source .venv/bin/activate
 
-# Install PDF processing dependencies
-pip install pdfplumber
+# Install dependencies
+pip install -r requirements.txt # or pip install pdfplumber fastapi uvicorn pytest
 ```
 
 ---
@@ -196,37 +192,13 @@ if dry_run_summary["dry_run_passed"]:
 
 ## Testing
 
-The PDF processing module contains **10 comprehensive test suites** covering all unit, integration, UI, and end-to-end database workflows.
+The PDF processing and backend modules contain comprehensive test suites covering all unit, integration, UI, and end-to-end database workflows.
 
 ### Run All Test Suites
 
-```powershell
-# Run the entire test suite sequentially
-$tests = Get-ChildItem tests\test_*.py
-foreach ($t in $tests) {
-    Write-Host "=== Running $($t.Name) ===" -ForegroundColor Cyan
-    & .venv\Scripts\python.exe $t.FullName
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "FAILED: $($t.Name)"
-        break
-    }
-}
+```bash
+python -m pytest tests/ -v
 ```
-
-### Test Coverage Breakdown
-
-| Test File | Test Count | What It Verifies |
-|---|---|---|
-| `test_extractor.py` | Unit | PDF stream extraction and missing file handling |
-| `test_parser.py` | Integration | Parses 52 students, headers, and metadata from sample PDF |
-| `test_normalizer.py` | 2 tests | Structure A compliance, roll uppercase, whitespace collapsing |
-| `test_review.py` | 2 tests | Working draft isolation, inline student edits, error blocking |
-| `test_end_to_end.py` | 3 tests | Full pipeline transformation from PDF to Structure B |
-| `test_backend_client.py` | 8 tests | HTTP client, payload validation, timeouts, connection errors |
-| `test_import_workflow.py` | 47 tests | Gated import, duplicate protection, uncertain timeout handling |
-| `test_workflow_adapter.py` | 31 tests | Stateless adapter transitions across all 6 workflow stages |
-| `test_pdf_upload_tab.py` | 8 tests | Streamlit UI component rendering, form validation, and buttons |
-| `test_e2e_backend_integration.py` | 5 phases / 8 errors | Real PDF-to-SQLite database verification, dry-run 0 writes, 251 saved, 9 ABS skipped |
 
 ---
 
@@ -270,10 +242,6 @@ foreach ($t in $tests) {
     "errors": []
   }
   ```
-
-### 3. Backend Recommendations
-
-Refer to [`pdf_processing/BACKEND_CHANGES_REQUIRED.md`](pdf_processing/BACKEND_CHANGES_REQUIRED.md) for recommendations to wrap the backend SQLite import loop in a single atomic transaction and add a unique constraint on `marks(student_id, subject_id, exam_id)`.
 
 ---
 

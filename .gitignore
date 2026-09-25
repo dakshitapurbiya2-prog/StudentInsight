@@ -1,9 +1,16 @@
-# Python
+# Python cache
 __pycache__/
 *.py[cod]
 *$py.class
 *.pyc
 *.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
 
 # Virtual environments
 .venv/
@@ -11,28 +18,43 @@ venv/
 env/
 ENV/
 
-# Distribution / packaging
-dist/
-build/
-*.egg-info/
-.eggs/
+# Database files (SQLite)
+data/*.db
+data/*.db-journal
+data/*.db-shm
+data/*.db-wal
 
-# Testing & coverage
-.pytest_cache/
-.coverage
-htmlcov/
-coverage.xml
+# Environment & secrets
+.env
+.env.*
+*.env
+*.secret
+secrets.json
 
-# IDEs
+# IDEs & OS
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# OS
 .DS_Store
 Thumbs.db
 
-# Environment variables
-.env
-*.env
+# Pytest & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+
+# Logs
+*.log
+
+# Node & frontend build
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.next/
+*.lock
+
+# Nested workspace clones
+student-insight.ai/
